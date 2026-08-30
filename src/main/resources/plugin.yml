@@ -1,0 +1,5 @@
+name: RevNet
+version: '${version}'
+
+main: dev.reveryy.revnet.RevNet
+api-version: '1.21'
