@@ -64,5 +64,22 @@
             <version>1.21.4-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.36</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>dev.reveryy</groupId>
+            <artifactId>revconfig</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.reveryy</groupId>
+            <artifactId>revdata</artifactId>
+            <version>1.0.0</version>
+        </dependency>
     </dependencies>
+
 </project>
