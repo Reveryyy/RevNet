@@ -26,6 +26,13 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.42</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>
@@ -41,6 +48,72 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- ========================================================= -->
+            <!-- ====================== DEV ONLY ========================= -->
+            <!-- ========================================================= -->
+            <!--
+                SVILUPPO LOCALE REVNET
+
+                Quando viene eseguito:
+
+                    mvn package
+
+                Maven:
+                    1. compila il plugin
+                    2. crea lo shaded JAR
+                    3. esegue lo script di sviluppo
+                    4. lo script ferma Paper, se necessario
+                    5. copia il nuovo JAR
+                    6. riavvia Paper
+
+                ⚠️ RIMUOVERE TUTTO IL BLOCCO "DEV ONLY"
+                   PRIMA DI UNA BUILD DI PRODUZIONE.
+            -->
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+
+                <executions>
+
+                    <!-- ================================================= -->
+                    <!-- DEV ONLY: deploy + restart Paper                  -->
+                    <!-- ================================================= -->
+
+                    <execution>
+                        <id>dev-deploy-and-restart</id>
+                        <phase>package</phase>
+
+                        <configuration>
+                            <target>
+
+                                <exec
+                                        executable="cmd.exe"
+                                        dir="${project.basedir}"
+                                        failonerror="true">
+
+                                    <arg value="/c"/>
+                                    <arg value="&quot;${project.basedir}\dev\restart-server.bat&quot;"/>
+                                    <arg value="${project.build.directory}\${project.build.finalName}.jar"/>
+
+                                </exec>
+
+                            </target>
+                        </configuration>
+
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+
+                </executions>
+            </plugin>
+
+            <!-- ========================================================= -->
+            <!-- =================== FINE DEV ONLY ======================= -->
+            <!-- ========================================================= -->
         </plugins>
         <resources>
             <resource>
@@ -67,7 +140,13 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.36</version>
+            <version>1.18.42</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>dev.jorel</groupId>
+            <artifactId>commandapi-spigot-core</artifactId>
+            <version>12.0.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

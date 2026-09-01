@@ -1,32 +1,23 @@
 package dev.reveryy.revnet.models;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.Singular;
+import dev.reveryy.revdata.Id;
+import dev.reveryy.revdata.Table;
+import dev.reveryy.revdata.Transient;
+import dev.reveryy.revnet.enums.Tipologia;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Table("networks")
 @Builder
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Network {
+    @Id
     String nome;
     String indirizzamento;
-    @Singular
-    List<Device> devices;
-
-
-    public static class NetworkBuilder {
-        private List<Device> devices = new ArrayList<>();
-
-        public NetworkBuilder device(Device device) {
-            if (device == null) throw new IllegalArgumentException("Device nullo");
-
-            device.setRete(nome);
-            devices.add(device);
-
-            return this;
-        }
-    }
+    Tipologia tipologia;
 
 }
