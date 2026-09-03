@@ -6,10 +6,11 @@ import dev.reveryy.revnet.models.Network;
 import dev.reveryy.revnet.models.Result;
 import dev.reveryy.revnet.repository.DeviceRepository;
 import dev.reveryy.revnet.repository.NetworkRepository;
+import inet.ipaddr.IPAddress;
+import inet.ipaddr.IPAddressString;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
+import java.beans.SimpleBeanInfo;
+import java.util.*;
 
 public class NetworkManager {
     private DeviceRepository deviceRepository;
@@ -21,33 +22,101 @@ public class NetworkManager {
     }
 
 
-    public NetError crea(String nome, String indirzzamento) {
-        if (networkRepository.findById(nome).isPresent()) {
-            return NetError.NET_CONFLICT;
-        }
+    public NetError crea(String nome, String indirizzo, int cidr) {
+        if (!Network.isValidIPv4(indirizzo)) return NetError.INVALID_IP;
+        if (!Network.isValidCidr(cidr)) return NetError.INVALID_CIDR;
+
+        IPAddress subnet = new IPAddressString(indirizzo)
+                .getAddress()
+                .toIPv4()
+                .toPrefixBlock(cidr);
+
+        List<Network> networks = networkRepository.findAll();
+
+        // Controllo conflitto NET
+        Optional<Network> existing = networks.stream()
+                .filter(n -> n.getNet().withoutPrefixLength().equals(subnet.withoutPrefixLength()))
+                .filter(n -> Objects.equals(n.getNet().getPrefixLength(), subnet.getPrefixLength()))
+                .findFirst();
+
+        if (existing.isPresent()) return NetError.NET_CONFLICT;
+
+        // Rete padre
+        Network parent = networks.stream()
+                .filter(n -> n.containsSubnet(subnet))
+                .max(Comparator.comparingInt(
+                        n -> n.getNet().getPrefixLength()))
+                .orElse(null);
+
+        Long parentId = parent != null ? parent.getId() : null;
+
+        List<Network> siblings = networks.stream()
+                .filter(n -> Objects.equals(n.getParentId(), parentId))
+                .toList();
+
+        if (siblings.stream().anyMatch(s -> overlaps(s.getNet(), subnet)))
+            return NetError.SUBNET_CONFLICT;
 
         Network network = Network.builder()
-                    .nome(nome)
-                    .indirizzamento(indirzzamento)
-                    .build();
+                .nome(nome)
+                .net(subnet)
+                .parentId(parentId)
+                .build();
+
         networkRepository.save(network);
-        System.out.println("[RETE] Nuova rete creata: " + nome + " Ind: " + indirzzamento);
         return NetError.OK;
     }
 
-    public NetError elimina(String nome) {
-        for (Device device : deviceRepository.findByRete(nome)) {device.setRete(null); deviceRepository.save(device); }
-        return networkRepository.deleteByNome(nome) > 0 ? NetError.OK : NetError.NET_NOT_FOUND;
+    private boolean overlaps(IPAddress a, IPAddress b) {
+        return a.contains(b.getLower())
+                || a.contains(b.getUpper())
+                || b.contains(a.getLower())
+                || b.contains(a.getUpper());
     }
 
-    public Optional<Network> cerca(String nome) {
-        return networkRepository.findById(nome);
+    public NetError elimina(String indirizzo, int cidr) {
+        if (!Network.isValidIPv4(indirizzo)) return NetError.INVALID_IP;
+        if (!Network.isValidCidr(cidr)) return NetError.INVALID_CIDR;
+
+        IPAddress address = new IPAddressString(indirizzo).getAddress().toIPv4().toPrefixBlock(cidr);
+
+        Optional<Network> found = networkRepository.findAll().stream()
+                .filter(n -> n.getNet().withoutPrefixLength().equals(address.withoutPrefixLength()))
+                .filter(n -> Objects.equals(n.getNet().getPrefixLength(), address.getPrefixLength()))
+                .findFirst();
+
+
+        if (found.isEmpty()) return NetError.NET_NOT_FOUND;
+
+        networkRepository.deleteById(found.get().getId());
+        return NetError.OK;
+    }
+
+    public Result<Network> cerca(String indirizzo, int cidr) {
+        if (!Network.isValidIPv4(indirizzo)) return Result.error(NetError.INVALID_IP);
+        if (!Network.isValidCidr(cidr)) return Result.error(NetError.INVALID_CIDR);
+
+        IPAddress address = new IPAddressString(indirizzo).getAddress().toIPv4().toPrefixBlock(cidr);
+        Optional<Network> found = networkRepository.findAll().stream()
+                .filter(n -> n.getNet().withoutPrefixLength().equals(address.withoutPrefixLength()))
+                .filter(n -> Objects.equals(n.getNet().getPrefixLength(), address.getPrefixLength()))
+                .findFirst();
+
+        return found
+                .map(Result::ok)
+                .orElse(Result.error(NetError.NET_NOT_FOUND));
     }
 
     public List<Network> listaNetwork() {
         return networkRepository.findAll();
     }
 
+    public List<Network> listaRoot() {
+        return networkRepository.findAll().stream().filter(n -> n.getParentId() == null).toList();
+    }
 
+    public List<Network> listaFigli(Long parentId) {
+        return networkRepository.findAll().stream().filter(n -> Objects.equals(n.getParentId(), parentId)).toList();
+    }
 
 }

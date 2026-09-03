@@ -3,23 +3,26 @@ package dev.reveryy.revnet.models;
 import dev.reveryy.revdata.GeneratedValue;
 import dev.reveryy.revdata.Id;
 import dev.reveryy.revdata.Table;
-import inet.ipaddr.IPAddress;
-import inet.ipaddr.ipv4.IPv4Address;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Table("devices")
-@Data
+import java.util.List;
+
+@Table("routers")
 @Builder
-@NoArgsConstructor
+@Data
 @AllArgsConstructor
-public class Device {
+@NoArgsConstructor
+public class Router {
     @Id
     @GeneratedValue
     private Long id;
-    private IPAddress address;
     private String nome;
-    private Long networkId;
+    private List<Network> networks;
+
+    public boolean contains(Network network) {
+        return networks.contains(network);
+    }
 }

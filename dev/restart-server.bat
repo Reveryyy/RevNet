@@ -24,7 +24,7 @@ REM ============================================================
 REM CONFIGURAZIONE
 REM ============================================================
 
-set "SERVER_DIR=C:\Users\phred\.localhost\1.21.4"
+set "SERVER_DIR=C:\Users\picco\.localhost\1.21.4"
 set "SERVER_JAR=server.jar"
 set "PLUGIN_DIR=%SERVER_DIR%\plugins"
 set "PLUGIN_NAME=revnet-1.0.0.jar"
